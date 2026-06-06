@@ -1,6 +1,6 @@
 import { close_api, delay, send, startService } from "./utils/utils.js";
 import { printBlue, printGreen, printMagenta, printRed, printYellow } from "./utils/colorOut.js";
-import { hasSecretWriteToken, setRepoSecret } from "./utils/githubSecrets.js";
+import { saveUserinfo } from "./utils/baihuHelper.js";
 import { maskIdentifier, sanitizeForLog, shouldPrintSensitiveValue, summarizeResponse } from "./utils/safeLog.js";
 
 async function qrcode() {
@@ -84,33 +84,7 @@ async function qrcode() {
       }
     }
     if (userinfo.length) {
-      const userinfoJSON = JSON.stringify(userinfo)
-      if (hasSecretWriteToken()) {
-        try {
-          setRepoSecret("USERINFO", userinfoJSON)
-          printGreen("secret <USERINFO> 更改成功")
-        } catch (error) {
-          printRed("自动写入 secret <USERINFO> 出错")
-          console.dir(sanitizeForLog({ message: error.message }), { depth: null })
-          if (shouldPrintSensitiveValue()) {
-            printYellow("已按显式配置输出 USERINFO；请用完后删除 Actions 日志")
-            printBlue(userinfoJSON)
-          } else {
-            printYellow("为避免泄露 token，默认不在日志输出 USERINFO")
-            printYellow("如必须手动复制，请重新运行并将 print_userinfo 选择为 是")
-          }
-        }
-      } else {
-        if (shouldPrintSensitiveValue()) {
-          printGreen("登录信息如下，把它添加到secret USERINFO 即可")
-          printYellow("注意：日志包含登录 token，请用完后删除 Actions 日志")
-          printBlue(userinfoJSON)
-        } else {
-          printYellow("PAT/GH_TOKEN 未配置，无法自动写入 secret <USERINFO>")
-          printYellow("为避免泄露 token，默认不在日志输出 USERINFO")
-          printYellow("如必须手动复制，请重新运行并将 print_userinfo 选择为 是")
-        }
-      }
+      await saveUserinfo(userinfo)
     }
   } finally {
     close_api(api)
